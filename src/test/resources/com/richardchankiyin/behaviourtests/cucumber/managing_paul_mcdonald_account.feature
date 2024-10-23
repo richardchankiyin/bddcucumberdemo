@@ -10,6 +10,12 @@ Feature: Managing Paul McDonald Account
     Given Paul has account balance 1000.0
     When Paul withdraws 40.5 and then deposits 20.2
     Then the account balance becomes 979.7
+
+  Scenario: Paul wants to deposit 30.2 from his account and then deposit 10.1 using his account no
+    Given Paul has account balance 1000.0
+    When Paul deposits 30.2
+    And Paul withdraws 10.1
+    Then the account balance becomes 1020.1
     
   Scenario: Paul wants to check his last 3 transactions
     Given Paul has account balance 200

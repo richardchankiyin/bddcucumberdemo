@@ -36,6 +36,15 @@ public class ManagingPaulMcDonaldAccountStepDefinitions {
     	account.deposit(accountno, d2);
     }
 
+    @When("Paul deposits {double}")
+    public void paul_deposits(double d1) {
+    	account.deposit(accountno, d1);
+    }
+    @When("Paul withdraws {double}")
+    public void paul_withdraws(double d1) {
+    	account.withdraw(accountno, d1);
+    }
+
     
     @Then("the account balance becomes {double}")
     public void the_account_balance_becomes(double d) {

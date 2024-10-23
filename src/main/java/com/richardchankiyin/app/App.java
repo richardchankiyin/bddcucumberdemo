@@ -5,6 +5,9 @@ package com.richardchankiyin.app;
  */
 public class App {
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+        IAccount account = new Account();
+        String accountno = account.createAccount("richardchan");
+        account.deposit(accountno, 100);
+        account.withdraw(accountno, 20);
     }
 }

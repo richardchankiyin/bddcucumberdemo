@@ -12,6 +12,7 @@ public class Account implements IAccount {
 	private Map<String,String> personalIdAccountMap;
 	private Map<String,BigDecimal> accountBalance;
 	private Map<String,List<Transaction>> accountTransactions;
+	private static final int MAX_LAST_LIST_N_VAL = 10;
 	
 	public Account() {
 		personalIdAccountMap = new ConcurrentHashMap<>();
@@ -98,7 +99,7 @@ public class Account implements IAccount {
 	@Override
 	public List<Transaction> listLastNTransactions(String accountno, int n) {
 		validateAccount(accountno);
-		if (n <= 0) {
+		if (n <= 0 || n > MAX_LAST_LIST_N_VAL) {
 			throw new AccountException("No of Transactions Arg not permitted");
 		}
 		List<Transaction> txns = accountTransactions.get(accountno);

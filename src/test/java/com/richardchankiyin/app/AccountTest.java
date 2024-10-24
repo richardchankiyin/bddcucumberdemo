@@ -165,6 +165,17 @@ class AccountTest {
 	}
 	
 	@Test
+	void testListTransactionAccountProvidingElevenNotAccepted() {
+		AccountException thrown = assertThrows(
+				AccountException.class,
+		           () -> account.listLastNTransactions(default_account_no, 11),
+		           "Expected account.listLastNTransactions(default_account_no, 11) to throw, but it didn't"
+		    );
+
+		assertTrue(thrown.getMessage().contains("No of Transactions Arg not permitted"));
+	}
+	
+	@Test
 	void testListAllTransactionsGivenOnly3FoundWhenAskingFor5() {
 		account.deposit(default_account_no, 100d);
 		account.withdraw(default_account_no, 50d);

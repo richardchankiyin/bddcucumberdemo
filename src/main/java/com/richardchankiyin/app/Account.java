@@ -6,15 +6,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+
+import com.google.common.util.concurrent.Striped;
+
 
 public class Account implements IAccount {
 
+	private Striped<Lock> stripedLock = null;
 	private Map<String,String> personalIdAccountMap;
 	private Map<String,BigDecimal> accountBalance;
 	private Map<String,List<Transaction>> accountTransactions;
 	private static final int MAX_LAST_LIST_N_VAL = 10;
 	
 	public Account() {
+		stripedLock = Striped.lock(10);
 		personalIdAccountMap = new ConcurrentHashMap<>();
 		accountBalance = new ConcurrentHashMap<>();
 		accountTransactions = new ConcurrentHashMap<>();
@@ -44,7 +50,10 @@ public class Account implements IAccount {
 	public String createAccount(String personalId) {
 		String personalIdIntern = personalId.intern();
 		String accountno = "";
-		synchronized(personalIdIntern) {
+		
+		Lock l = stripedLock.get(personalIdIntern);
+		l.lock();		
+		try {
 			if (isPersonalIdFound(personalIdIntern)) {
 				throw new AccountException("Personal Id duplicated");
 			}
@@ -52,6 +61,8 @@ public class Account implements IAccount {
 			personalIdAccountMap.put(personalIdIntern, accountno);
 			accountBalance.put(accountno, BigDecimal.ZERO);
 			accountTransactions.put(accountno, new ArrayList<>());
+		} finally {
+			l.unlock();
 		}
 		
 		return accountno;
@@ -62,12 +73,16 @@ public class Account implements IAccount {
 		validateAccount(accountno);
 		validateAmount(amt);
 		String accountnoIntern = accountno.intern();
-		synchronized(accountnoIntern) {
+		Lock l = stripedLock.get(accountnoIntern);
+		l.lock();
+		try {
 			BigDecimal balance = accountBalance.get(accountnoIntern);
 			balance = balance.add(BigDecimal.valueOf(amt));
 			Transaction txn = new Transaction(accountnoIntern, true, amt);
 			accountBalance.put(accountno,balance);
 			accountTransactions.get(accountnoIntern).add(txn);
+		} finally {
+			l.unlock();
 		}
 		
 	}
@@ -77,7 +92,9 @@ public class Account implements IAccount {
 		validateAccount(accountno);
 		validateAmount(amt);
 		String accountnoIntern = accountno.intern();
-		synchronized(accountnoIntern) {
+		Lock l = stripedLock.get(accountnoIntern);
+		l.lock();
+		try {
 			BigDecimal balance = accountBalance.get(accountnoIntern);
 			BigDecimal amtBD = BigDecimal.valueOf(amt);
 			if (balance.compareTo(amtBD) < 0) {
@@ -87,6 +104,8 @@ public class Account implements IAccount {
 			Transaction txn = new Transaction(accountnoIntern, false, amt);
 			accountBalance.put(accountno,balance);
 			accountTransactions.get(accountnoIntern).add(txn);
+		} finally {
+			l.unlock();
 		}
 	}
 
@@ -105,12 +124,17 @@ public class Account implements IAccount {
 		String accountnoIntern = accountno.intern();
 		List<Transaction> txns = accountTransactions.get(accountnoIntern);
 		List<Transaction> result = null;
-		synchronized(accountnoIntern) {
+		Lock l = stripedLock.get(accountnoIntern);
+		l.lock();
+		try {
 			if (txns.size() > n) {
 				result = txns.subList(txns.size() - n, txns.size());
 			} else {
 				result = txns;
 			}
+		}
+		finally {
+			l.unlock();
 		}
 		return result;
 	}

@@ -102,9 +102,10 @@ public class Account implements IAccount {
 		if (n <= 0 || n > MAX_LAST_LIST_N_VAL) {
 			throw new AccountException("No of Transactions Arg not permitted");
 		}
-		List<Transaction> txns = accountTransactions.get(accountno);
+		String accountnoIntern = accountno.intern();
+		List<Transaction> txns = accountTransactions.get(accountnoIntern);
 		List<Transaction> result = null;
-		synchronized(accountno) {
+		synchronized(accountnoIntern) {
 			if (txns.size() > n) {
 				result = txns.subList(txns.size() - n, txns.size());
 			} else {

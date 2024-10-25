@@ -183,7 +183,7 @@ class AccountTest {
 		
 		List<Transaction> txns = account.listLastNTransactions(default_account_no, 5);
 		assertNotNull(txns);
-		assertEquals(txns.size(), 3);
+		assertEquals(3, txns.size());
 		assertEquals(default_account_no, txns.get(0).accountno());
 		assertEquals(default_account_no, txns.get(1).accountno());
 		assertEquals(default_account_no, txns.get(2).accountno());
@@ -209,7 +209,7 @@ class AccountTest {
 		
 		List<Transaction> txns = account.listLastNTransactions(default_account_no, 3);
 		assertNotNull(txns);
-		assertEquals(txns.size(), 3);
+		assertEquals(3, txns.size());
 		assertEquals(default_account_no, txns.get(0).accountno());
 		assertEquals(default_account_no, txns.get(1).accountno());
 		assertEquals(default_account_no, txns.get(2).accountno());

@@ -121,6 +121,30 @@ class AccountTest {
 	}
 	
 	@Test
+	void testDepositAccountBalancePositiveConcurrentAndThenEnquireBalance() throws Exception{
+		Callable<Double> callableTask1 = () -> {
+			account.deposit(default_account_no, 100d);
+			return account.enquirebalance(default_account_no);
+		};
+		
+		Callable<Double> callableTask2 = () -> {
+			account.deposit(default_account_no, 150d);
+			return account.enquirebalance(default_account_no);
+		};
+		
+		List<Callable<Double>> callableTasks = new ArrayList<>();
+		callableTasks.add(callableTask1);
+		callableTasks.add(callableTask2);
+		List<Future<Double>> results = es.invokeAll(callableTasks);
+		
+		double result1 = results.get(0).get(100, TimeUnit.SECONDS).doubleValue();
+		double result2 = results.get(1).get(100, TimeUnit.SECONDS).doubleValue();
+		logger.debug("result1: {} result2: {}", result1, result2);
+		
+		assertTrue((result1 == 100d && result2 == 250d) || (result1 == 250d && result2 == 150d), String.format("result1: %s result2: %s", result1, result2));
+	}
+	
+	@Test
 	void testWithdrawAccountDoesNotExist() {
 		AccountException thrown = assertThrows(
 				AccountException.class,
@@ -170,6 +194,62 @@ class AccountTest {
 		account.deposit(default_account_no, 100d);
 		account.withdraw(default_account_no, 50d);
 		assertEquals(50d, account.enquirebalance(default_account_no));
+	}
+	
+	@Test
+	void testWithdrawAccountBalanceConcurrentEnquireBalance() throws Exception{
+		account.deposit(default_account_no, 500d);
+		
+		Callable<Double> callableTask1 = () -> {
+			account.withdraw(default_account_no, 200d);
+			return account.enquirebalance(default_account_no);
+		};
+		
+		Callable<Double> callableTask2 = () -> {
+			account.withdraw(default_account_no, 150d);
+			return account.enquirebalance(default_account_no);
+		};
+		
+		List<Callable<Double>> callableTasks = new ArrayList<>();
+		callableTasks.add(callableTask1);
+		callableTasks.add(callableTask2);
+		List<Future<Double>> results = es.invokeAll(callableTasks);
+		
+		double result1 = results.get(0).get(100, TimeUnit.SECONDS).doubleValue();
+		double result2 = results.get(1).get(100, TimeUnit.SECONDS).doubleValue();
+		logger.debug("result1: {} result2: {}", result1, result2);
+		
+		assertTrue((result1 == 300d && result2 == 150d) || (result1 == 350d && result2 == 150d), String.format("result1: %s result2: %s", result1, result2));
+
+	}
+	
+	@Test
+	void testDepositWithdrawConcurrentSometimesFailed() throws Exception {
+		Callable<Double> callableTask1 = () -> {
+			account.deposit(default_account_no, 200d);
+			return account.enquirebalance(default_account_no);
+		};
+		
+		Callable<Double> callableTask2 = () -> {
+			account.withdraw(default_account_no, 150d);
+			return account.enquirebalance(default_account_no);
+		};
+		
+		List<Callable<Double>> callableTasks = new ArrayList<>();
+		callableTasks.add(callableTask1);
+		callableTasks.add(callableTask2);
+		List<Future<Double>> results = es.invokeAll(callableTasks);
+		
+		double result1 = results.get(0).get(100, TimeUnit.SECONDS).doubleValue();
+		
+		try {
+			double result2 = results.get(1).get(100, TimeUnit.SECONDS).doubleValue();
+			assertEquals(200d, result1);
+			assertEquals(50d, result2);
+		} catch (Exception e) {
+			logger.debug("testDepositWithdrawConcurrentSometimesFailed", e);
+			assertEquals(200d, result1);
+		}
 	}
 	
 	@Test

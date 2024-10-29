@@ -2,21 +2,39 @@ package com.richardchankiyin.app;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 class AccountTest {
-
+	final Logger logger = LoggerFactory.getLogger(AccountTest.class);
 	private IAccount account = null;
 	private final String DEFAULT_PERSONAL_ID = "default_personal_id";
 	private String default_account_no = null;
+	private ExecutorService es = null;
 	
 	@BeforeEach
 	void setup() {
 		account = new Account();
 		default_account_no = account.createAccount(DEFAULT_PERSONAL_ID);
+		es = Executors.newFixedThreadPool(10);
+	}
+	
+	@AfterEach
+	void tearDown() {
+		if (es != null) {
+			es.shutdownNow();
+		}
 	}
 	
 	@Test
@@ -37,6 +55,29 @@ class AccountTest {
 		assertTrue(thrown.getMessage().contains("Personal Id duplicated"));
 	}
 
+	
+	@Test
+	void testConcurrentCreateAccountOneFailed() throws Exception{
+		
+		Callable<String> callableTask = () -> {
+			String accountno = null;
+			try {
+				account.createAccount("123");
+			} catch (Exception e) {
+				logger.debug("testConcurrentCreateAccountOneFailed", e);
+			}
+			return accountno;
+		};
+		
+		List<Callable<String>> callableTasks = new ArrayList<>();
+		callableTasks.add(callableTask);
+		callableTasks.add(callableTask);
+		List<Future<String>> results = es.invokeAll(callableTasks);
+		String result1 = results.get(0).get(100, TimeUnit.SECONDS);
+		String result2 = results.get(1).get(100, TimeUnit.SECONDS);
+		assertTrue(result1 == null | result2 == null);
+	}
+	
 	
 	@Test
 	void testDepositAccountDoesNotExist() {
